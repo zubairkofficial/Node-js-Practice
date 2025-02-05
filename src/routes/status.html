@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server Status</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f2f5;
+        }
+        .status-container {
+            background-color: #ffffff;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .status-icon {
+            color: #4CAF50;
+            font-size: 48px;
+            margin-bottom: 1rem;
+        }
+        .status-message {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 0.5rem;
+        }
+        .timestamp {
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="status-container">
+        <div class="status-icon">✅</div>
+        <h1 class="status-message">Server is Up and Running</h1>
+        <p class="timestamp">Database Connected Successfully at: {{timestamp}}</p>
+    </div>
+</body>
+</html>

@@ -2,6 +2,7 @@ const User = require('../models/user.model');
 const jwt = require('jsonwebtoken');
 const slugify = require('slugify');
 const upload = require('../Config/upload');
+const { sendotpEmail } = require('../utils/email');
 
 const userController = {
     async signup(req, res) {
@@ -39,6 +40,19 @@ const userController = {
             //remove password from response
             const userResponse = newUser.toJSON();
             delete userResponse.password;
+
+            const otp = Math.floor(1000 + Math.random() * 9000);
+            console.log(otp);   
+            console.log(email);
+            // save otp and expiry to user
+            await newUser.update({
+                resetOtp : otp,
+                resetOtpExpiry: new Date(Date.now() + 10 * 60 * 1000)
+            })
+            console.log(newUser);
+
+            //send otp mail
+            await sendotpEmail(email, otp);
 
             res.status(201).json({
                 message: 'User created successfully',
@@ -174,6 +188,114 @@ const userController = {
         } catch (error) {
             console.error('Error updating profile:', error);
             res.status(500).json({ message: 'Internal Server Error' });
+        }
+    },
+
+    async forgotPassword(req , res) {
+        try {
+            const { email } = req.body;
+
+            // validate email
+            if (!email) {
+                return res.status(400).json({ message: 'Email is required' });
+            }
+
+            // find user by email
+            const user = await User.findOne({ where: { email } });
+            if (!user) {
+                return res.status(404).json({ message: 'User not found' });
+            }   
+
+            // generate 4 digit OTP
+            const otp = Math.floor(1000 + Math.random() * 9000);
+            console.log(otp);   
+            console.log(email);
+            // save otp and expiry to user
+            await user.update({
+                resetOtp : otp,
+                resetOtpExpiry: new Date(Date.now() + 10 * 60 * 1000)
+            })
+            console.log(user);
+
+            //send otp mail
+            await sendotpEmail(email, otp);
+
+            res.status(200).json({ message: 'OTP sent to your email' });    
+        } catch (error) {
+            console.error('Forgot Password Error:', error);
+
+            //if there was an error, reset the otp fields
+            if(User) {
+                await User.update({
+                    resetOtp : null,
+                    resetOtpExpiry: null
+                })
+            }
+
+            res.status(500).json({ 
+                message: 'Error Sending OTP',
+                status: 'error',
+                details: error.message
+            });
+        }
+
+    },
+
+    async verifyOtp(req, res) {
+        try {
+            const { email, otp, isSignup } = req.body;
+
+            // validate email and otp
+            if (!email || !otp) {
+                return res.status(400).json({ message: 'Email and OTP are required' });
+            }
+
+            // find user by email
+            const user = await User.findOne({ where: { email } });
+            if (!user) {
+                return res.status(404).json({ message: 'User not found' });
+            }
+
+            // check if otp is valid and not expired
+            if (user.resetOtp !== otp || user.resetOtpExpiry < new Date()) {
+                return res.status(400).json({ message: 'Invalid or expired OTP' });
+            }
+
+            // clear otp fields and update isVerified if isSignup is true
+            await user.update({
+                resetOtp: null,
+                resetOtpExpiry: null,
+                isVerified: isSignup ? true : user.isVerified
+            });
+
+            res.status(200).json({ message: 'OTP verified successfully' });
+        } catch (error) {
+            console.error('Error verifying OTP:', error);
+            res.status(500).json({ message: 'Internal Server Error' });
+        }
+    },
+
+    async resetPassword(req, res){
+   
+        try {
+            const { newPassword, confirmPassword, email } = req.body;
+            //validate new password and confirm password
+            if(!newPassword || !confirmPassword) {
+                return res.status(400).json({ message: 'New password and confirm password are required' });
+            }
+            if(newPassword !== confirmPassword) {
+                return res.status(400).json({ message: 'New password and confirm password do not match' });
+            }
+            //find user by email
+            const user = await User.findOne({ where: { email } });
+            user.update({
+                password: newPassword
+            })
+            
+        } catch (error) {
+            console.error('Error resetting password:', error);
+            res.status(500).json({ message: 'Internal Server Error' });
+            
         }
     }
     

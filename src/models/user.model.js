@@ -38,6 +38,21 @@ const User = sequelize.define('User', {
         field: 'profile_picture',
         allowNull: true,
     },
+    resetOtp: {
+        type : DataTypes.STRING,
+        field: 'reset_otp',
+        allowNull: true,
+    },
+    resetOtpExpires: {
+        type: DataTypes.DATE,
+        field: 'reset_otp_expires',
+        allowNull: true,    
+    },
+    isVerified: {
+        type: DataTypes.BOOLEAN,
+        field: 'is_verified',
+        allowNull: true,
+    },
 }, {
     tableName: 'user',
     timestamps: true,
