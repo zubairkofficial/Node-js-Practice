@@ -1,8 +1,9 @@
-const User = require('../models/user.model');
-const jwt = require('jsonwebtoken');
-const slugify = require('slugify');
-const upload = require('../Config/upload');
-const { sendotpEmail } = require('../utils/email');
+
+import jwt from 'jsonwebtoken';
+import slugify from 'slugify';
+import bcrypt from 'bcrypt';
+import  sendotpEmail from '../utils/email.js';
+import  User  from '../models/user.model.js';
 
 const userController = {
     async signup(req, res) {
@@ -286,11 +287,19 @@ const userController = {
             if(newPassword !== confirmPassword) {
                 return res.status(400).json({ message: 'New password and confirm password do not match' });
             }
+         
+            
             //find user by email
             const user = await User.findOne({ where: { email } });
-            user.update({
-                password: newPassword
-            })
+            
+            //hash the new password
+            const hashedPassword = await bcrypt.hash(newPassword, 10);
+            
+            //update user password with hashed password
+            await user.update({
+                password: hashedPassword
+            });
+            console.log("user password" , user.password)
             
         } catch (error) {
             console.error('Error resetting password:', error);
@@ -302,4 +311,4 @@ const userController = {
 }
 
 
-module.exports = userController;
+export default userController;
